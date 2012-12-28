@@ -1,0 +1,118 @@
+!!! 5
+html(lang='en', ng-app='myApp')
+  head
+    meta(charset='utf-8')
+    title Simply Do - Balance Projector
+    link(rel='stylesheet', href='css/default.css')
+  body
+    .container(ng-controller='projectorCtrl')
+      .row
+        .span7
+          .box
+            h2 How much money do you have today?
+            input(type='text', ng-model='startBalance', placeholder='Enter your current balance')
+          .box
+            h2 What is your regular income?
+            ul
+              li(class='active-{{income.active}}', ng-repeat='income in incomes')
+                span
+                  input(type='checkbox', ng-model='income.active')
+                input.span3(type='text', ng-model='income.name', placeholder='What is it? e.g. Salary...')
+                input.span1(type='text', ng-model='income.amount', placeholder='Enter Amount')
+                select.span2(ng-model='income.frequency')
+                  option(value='30.4166666666667') daily
+                  option(value='21.6666666666667') work days
+                  option(value='4.33333333333333') weekly
+                  option(value='2.16666666666667') every 2 weeks
+                  option(value='1') monthly
+                a(ng-click='removeIncome($index);')
+                  i.icon-minus-sign
+            button.btn.btn-indented(ng-click='addIncome();')
+              i.icon-plus
+              | Add
+          .box
+            h2 What are your regular expenses?
+            ul
+              li(class='active-{{expense.active}}', ng-repeat='expense in expenses')
+                span
+                  input(type='checkbox', ng-model='expense.active')
+                input.span3(type='text', ng-model='expense.name', placeholder='e.g. Rent...')
+                input.span1(type='text', ng-model='expense.amount', placeholder='Enter Amount')
+                select.span2(ng-model='expense.frequency')
+                  option(value='30.4166666666667') Daily
+                  option(value='21.6666666666667') Business Daily
+                  option(value='4.33333333333333') Weekly
+                  option(value='2.16666666666667') Every 2 Weeks
+                  option(value='1') Monthly
+                a(ng-click='removeExpense($index);')
+                  i.icon-minus-sign
+            button.btn.btn-indented(ng-click='addExpense();')
+              i.icon-plus
+              | Add
+          .box
+            h2 Any non-Recurring transactions?
+            ul
+              li(class='active-{{transaction.active}}', ng-repeat='transaction in nonRecurring')
+                span
+                  input(type='checkbox', ng-model='transaction.active')
+                input.span3(type='text', ng-model='transaction.name', placeholder='e.g. Bonus...')
+                input.span1(type='text', ng-model='transaction.amount', placeholder='Enter Amount')
+                select.span2(ng-model='transaction.month', ng-options='getMonthLabel(value) for value in [1,2,3,4,5,6,7,8,9,10,11,12]')
+                a(ng-click='removeTransaction($index);')
+                  i.icon-minus-sign
+            button.btn.btn-indented(ng-click='addTransaction();')
+              i.icon-plus
+              | Add
+          .store(ng-show='storageSupport')
+            p
+              button.btn.btn-success(ng-click='save();')
+                i.icon-hdd.icon-white
+                | Save
+              button.btn.btn-danger(ng-click='clear();')
+                i.icon-trash.icon-white
+                | Erase
+            p Important: You data is stored locally on this very device only.
+        .span5
+          table.table.table-striped
+            thead
+              tr
+                th.number(colspan='2') Accumulated net income
+                th.number Balance
+            tbody
+              tr(ng-repeat='change in montlyProjection();')
+                td {{getMonthLabel($index+1)}}
+                td.number {{roundDown(change)}}
+                td.number(ng-class='positiveNegative(convertToNumber(startBalance) + change)') {{roundDown(convertToNumber(startBalance) + change)}}
+          table.table.table-striped
+            thead
+              tr
+                th
+                th.number Per month
+                th.number Per year
+            tbody
+              tr
+                td Income
+                td.number {{roundDown(monthlyIncome())}}
+                td.number {{roundDown(monthlyIncome()*12)}}
+              tr
+                td Expenses
+                td.number {{roundDown(monthlyExpense())}}
+                td.number {{roundDown(monthlyExpense()*12)}}
+              tr
+                td Non-Recurring
+                td.number
+                td.number {{tallyTransactions()}}
+              tr
+                td
+                  strong Net income
+                td.number(ng-class='positiveNegative(monthlyNet())')
+                  strong {{roundDown(monthlyNet())}}
+                td.number(ng-class='positiveNegative((monthlyNet()*12)+tallyTransactions())')
+                  strong {{roundDown(monthlyNet()*12)+tallyTransactions()}}
+    script(src='lib/angular/angular.js')
+    script(src='lib/socialite/socialite.min.js')
+    script(src='js/app.js')
+    script(src='js/services.js')
+    script(src='js/controllers.js')
+    script(src='js/filters.js')
+    script(src='js/directives.js')
