@@ -52,103 +52,75 @@
     []
     (def total 0)
     (def oneOff 0)
-    (dofor
-     [(def m 0)
-      (< m (count  $scope.nonRecurring))
-      (inc-after! m)]
-     (do
-       (set! oneOff
-             (..
-              $scope
-              (convertToNumber (:amount (get $scope.nonRecurring m)))))
-       (if (not= oneOff 0)
-         (if (:active (get $scope.nonRecurring m))
-           (set! total (+ total oneOff))))))
+    (for [non-recurring $scope.nonRecurring]
+      (set! oneOff
+            (..
+             $scope
+             (convertToNumber (:amount non-recurring))))
+      (if (not= oneOff 0)
+        (if (:active non-recurring)
+          (set! total (+ total oneOff)))))
     total)
   (defn $scope.monthlyIncome
     []
     (def total 0)
     (def thisMonth nil)
-    (dofor
-     [(def i 0) (< i (count $scope.incomes)) (inc-after! i)]
-     (set! thisMonth
-           (..
-            $scope
-            (convertToNumber (:amount (get $scope.incomes i)))))
-     (if (not= thisMonth 0)
-       (if (:active (get (-> $scope.incomes) i))
-         (set! total
-               (+ total
-                  (* thisMonth (:frequency (get $scope.incomes i))))))))
+    (for [income $scope.incomes]
+      (set! thisMonth
+            (.. $scope
+                (convertToNumber (:amount income))))
+      (if (not= thisMonth 0)
+        (if (:active income)
+          (set! total
+                (+ total
+                   (* thisMonth (:frequency income)))))))
     total)
   (defn $scope.monthlyExpense
     []
     (def total 0)
     (def thisMonth nil)
-    (dofor
-     [(def i 0) (< i (count $scope.expenses)) (inc-after! i)]
-     (do
-       (set! thisMonth
-             (..
-              $scope
-              (convertToNumber (:amount (get $scope.expenses i)))))
-       (if
-           (not= thisMonth 0)
-         (if
-             (get (-> $scope :expenses) i :active)
-           (set!
-            total
-            (+
-             total
-             (* thisMonth (:frequency (get $scope.expenses i)))))))))
+    (for [expense $scope.expenses]
+      (set! thisMonth
+            (..
+             $scope
+             (convertToNumber (:amount expense))))
+      (if (not= thisMonth 0)
+        (if (get expense :active)
+          (set! total
+                (+ total
+                   (* thisMonth (:frequency expense)))))))
     total)
   (defn $scope.monthlyNet
     []
-    (do
-      (def income (.. $scope monthlyIncome))
-      (def expense (.. $scope monthlyExpense))
-      (- income expense)))
+    (def income (.. $scope monthlyIncome))
+    (def expense (.. $scope monthlyExpense))
+    (- income expense))
   (defn
     $scope.montlyProjection
     []
     (def monthByMonth [])
     (def runningTotal 0)
     (def oneOff 0)
-    (dofor
-     [(def i 0) (< i 12) (inc-after! i)]
-     (do
-       (set! runningTotal (+ runningTotal (.. $scope monthlyNet)))
-       (dofor
-        [(def m 0)
-         (< m (count $scope.nonRecurring))
-         (inc-after! m)]
-        (if
-            (==
-             (..
-              $scope
-              (convertToNumber (:month (get $scope.nonRecurring m))))
-             (+ i 1))
-          (do
-            (set!
-             oneOff
-             (..
-              $scope
-              (convertToNumber
-               (:amount (get $scope.nonRecurring m)))))
-            (if
-                (not= oneOff 0)
-              (if
-                  (:active (get $scope.nonRecurring m))
-                (set! runningTotal (+ runningTotal oneOff)))))))
-       (set! (get monthByMonth i) runningTotal)))
+    (for [i (range 12)]
+      (set! runningTotal (+ runningTotal (.. $scope monthlyNet)))
+      (for [non-recurring $scope.nonRecurring]
+        (when (== (.. $scope
+                      (convertToNumber (:month non-recurring)))
+                  (+ i 1))
+          (set! oneOff
+                (.. $scope
+                    (convertToNumber (:amount non-recurring))))
+          (if (not= oneOff 0)
+            (if (:active non-recurring)
+              (set! runningTotal (+ runningTotal oneOff))))))
+      (set! (get monthByMonth i) runningTotal))
     monthByMonth)
   (defn $scope.getMonthLabel
     [monthAhead]
     (def d (new Date))
     (def currentMonth (.. d getMonth))
     (def year (.. d getFullYear))
-    (def
-      monthNames
+    (def monthNames
       ["January"
        "February"
        "March"
@@ -168,17 +140,14 @@
         (set! futureMonth (- futureMonth 12))
         (set! year (+ year 1))))
     (+ (get monthNames futureMonth) " " year))
-  (set!
-   (-> $scope :positiveNegative)
-   (fn
-     [value]
-     (if (> value 0) "positive")
-     (if (< value 0) "negative")))
+  (defn $scope.positiveNegative
+    [value]
+    (if (> value 0) "positive")
+    (if (< value 0) "negative"))
   (defn
     $scope.convertToNumber
     [value]
-    (def floatNumber (parseFloat value))
-    (if floatNumber floatNumber 0))
+    (or (parseFloat value) 0))
   (defn $scope.roundDown [number] (.. Math (round number)))
   (defn $scope.initForm
     []
